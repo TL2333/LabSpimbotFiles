@@ -88,15 +88,29 @@ main:
     li  $t1, 1
     sw  $t1, SHOOT
 
-    li $t8, 0
-    li $t9, 10
-    move_10_loop:
-      bge   $t8, $t9, end_move_loop  # for (i < 10)
-      jal move_space
-      addi  $t8, $t8, 1      # i++
-      j     move_10_loop
+    # move 10 spaces east
+    li  $a0, 0
+    li  $a1, 10
+    jal move_spaces
 
-    end_move_loop:
+    # move 5 spaces south
+    li  $a0, 90
+    li  $a1, 5
+    jal move_spaces
+
+    # move 3 spaces turn_east
+    li  $a0, 0
+    li  $a1, 2
+    jal move_spaces
+
+    jal turn_south
+
+    li  $a0, 2
+    jal charge_and_shoot
+
+    li  $a0, 90
+    lw  $a1, GET_AMMO
+    jal move_spaces
 
 
 loop: # Once done, enter an infinite loop so that your bot can be graded by QtSpimbot once 10,000,000 cycles have elapsed
@@ -140,7 +154,7 @@ move_space:
     sw    $v0, TIMER
 
     li    $t1, 0            # stalls for 8000 cycles
-    li    $t2, 2100
+    li    $t2, 2035
     stall_loop:
     bge   $t1, $t2, end_stall
     addi  $t1, $t1, 1
@@ -152,6 +166,40 @@ move_space:
     sw    $t0, VELOCITY
 
     jr    $ra
+
+move_spaces:
+
+  sub    $sp, $sp, 16    # allocate stack
+  sw     $ra, 0($sp)
+  sw     $s0, 4($sp)
+  sw     $s1, 8($sp)
+  sw     $s2, 12($sp)
+
+  move   $s0, $a0       # storing the function parameters
+  move   $s1, $a1
+
+  sw    $s0, ANGLE
+  li    $t0, 1
+  sw    $t0, ANGLE_CONTROL
+
+  li $s2, 0             # int i = 0
+  move_n_loop:
+    bge   $s2, $s1, end_move_loop  # for (i < $a1)
+    jal move_space
+    addi  $s2, $s2, 1      # i++
+    j     move_n_loop
+
+  end_move_loop:
+
+  lw    $ra, 0($sp)
+  lw    $s0, 4($sp)
+  lw    $s1, 8($sp)
+  lw    $s2, 12($sp)
+
+  addi  $sp, $sp, 16
+
+  jr    $ra
+
 
 handle_puzzle:
 
